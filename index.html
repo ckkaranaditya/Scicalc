@@ -1,0 +1,548 @@
+<!DOCTYPE html>
+<html lang="ta">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0">
+  <title>Adaptive Scientific FX Calculator</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+      -webkit-tap-highlight-color: transparent;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    }
+
+    body {
+      background-color: #0a0c10;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      color: #fff;
+      overflow: hidden;
+    }
+
+    .calc-container {
+      width: 100vw;
+      height: 100vh;
+      max-width: 500px;
+      background: #12141c;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      padding: 16px;
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.7);
+      transition: all 0.3s ease;
+    }
+
+    /* Display Area */
+    .display-panel {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end;
+      align-items: flex-end;
+      padding: 12px 18px;
+      background: #0b0d14;
+      border-radius: 20px;
+      margin-bottom: 12px;
+      border: 1px solid #1c2130;
+      min-height: 120px;
+    }
+
+    .top-bar {
+      width: 100%;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.85rem;
+      color: #00e5ff;
+      font-weight: 600;
+      margin-bottom: auto;
+    }
+
+    .controls-group {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .deg-btn, .fullscreen-btn {
+      cursor: pointer;
+      background: #1b233a;
+      padding: 4px 10px;
+      border-radius: 6px;
+      border: 1px solid #28375c;
+      color: #00e5ff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.85rem;
+    }
+
+    .fullscreen-btn {
+      font-size: 1.05rem;
+      padding: 2px 8px;
+    }
+
+    .deg-btn:active, .fullscreen-btn:active {
+      background: #28375c;
+    }
+
+    .expression-box {
+      font-size: 1.5rem;
+      color: #838a9d;
+      min-height: 32px;
+      word-break: break-all;
+      text-align: right;
+      line-height: 1.3;
+    }
+
+    .result-box {
+      font-size: 2.8rem;
+      font-weight: 700;
+      color: #00ffaa;
+      text-shadow: 0 0 12px rgba(0, 255, 170, 0.25);
+      margin-top: 4px;
+      word-break: break-all;
+      text-align: right;
+    }
+
+    /* Keypad Grid (Default: Portrait 4 Columns) */
+    .keypad {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
+    }
+
+    button {
+      height: 58px;
+      border: none;
+      outline: none;
+      border-radius: 16px;
+      font-size: 1.3rem;
+      font-weight: 600;
+      color: #ffffff;
+      background: #1e2230;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+      cursor: pointer;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      transition: transform 0.08s ease, filter 0.08s ease;
+    }
+
+    button:active {
+      transform: scale(0.93);
+      filter: brightness(1.25);
+    }
+
+    .btn-num {
+      background: #272d3e;
+      font-size: 1.4rem;
+    }
+
+    .btn-sci {
+      background: #191d2a;
+      color: #92a4e8;
+      font-size: 1.05rem;
+    }
+
+    .btn-op {
+      background: #1a2a3d;
+      color: #00d2ff;
+      font-size: 1.45rem;
+    }
+
+    .btn-clear {
+      background: #3d1b26;
+      color: #ff4d73;
+    }
+
+    .btn-del {
+      background: #3d2f1b;
+      color: #ffa834;
+    }
+
+    .btn-dollar {
+      background: linear-gradient(135deg, #10b981, #06b6d4);
+      color: #051d18;
+      font-weight: 800;
+      font-size: 1.1rem;
+    }
+
+    .btn-equal {
+      background: linear-gradient(135deg, #00ffaa, #00b4d8);
+      color: #051f16;
+      font-size: 1.7rem;
+      font-weight: 800;
+      box-shadow: 0 4px 15px rgba(0, 255, 170, 0.3);
+    }
+
+    /* Portrait Mode-ல் சயின்டிஃபிக் பட்டன்களை மறைக்க */
+    .sci-key {
+      display: none;
+    }
+
+    /* =======================================================
+       LANDSCAPE MODE (போனை படுக்கை வசமாகத் திருப்பும்போது)
+       ======================================================= */
+    @media (orientation: landscape) and (max-height: 550px), (min-width: 700px) and (orientation: landscape) {
+      .calc-container {
+        max-width: 95vw;
+        height: 96vh;
+        flex-direction: row;
+        gap: 16px;
+        padding: 12px;
+      }
+
+      .display-panel {
+        flex: 1.2;
+        margin-bottom: 0;
+        height: 100%;
+        padding: 18px;
+      }
+
+      .expression-box {
+        font-size: 1.8rem;
+      }
+
+      .result-box {
+        font-size: 3.2rem;
+      }
+
+      /* லேண்ட்ஸ்கேப்பில் 8 காலம்களாக மாறும் */
+      .keypad {
+        flex: 2;
+        grid-template-columns: repeat(8, 1fr);
+        gap: 8px;
+        height: 100%;
+        align-content: stretch;
+      }
+
+      button {
+        height: auto;
+        border-radius: 12px;
+        font-size: 1.1rem;
+      }
+
+      .btn-num {
+        font-size: 1.25rem;
+      }
+
+      /* அறிவியல் பட்டன்கள் அனைத்தும் தானாகத் தெரியும் */
+      .sci-key {
+        display: flex;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="calc-container" id="calculatorApp">
+    <!-- Display Section -->
+    <div class="display-panel">
+      <div class="top-bar">
+        <div class="controls-group">
+          <span id="angleMode" class="deg-btn" onclick="toggleAngleMode()">DEG</span>
+          <span class="fullscreen-btn" onclick="toggleFullScreen()" title="Full Screen">⛶</span>
+        </div>
+        <span id="modeText" style="color:#788198; font-size: 0.75rem;">ROTATE FOR SCIENTIFIC</span>
+      </div>
+      <div id="expression" class="expression-box">0</div>
+      <div id="result" class="result-box">0</div>
+    </div>
+
+    <!-- Responsive Adaptive Keypad -->
+    <div class="keypad">
+      <!-- Row 1: Sci keys appear on left in Landscape -->
+      <button class="btn-sci sci-key" onclick="appendFunc('sin')">sin</button>
+      <button class="btn-sci sci-key" onclick="appendFunc('cos')">cos</button>
+      <button class="btn-sci sci-key" onclick="appendFunc('tan')">tan</button>
+      <button class="btn-sci sci-key" onclick="appendOp('%')">%</button>
+      <button class="btn-clear" onclick="clearAll()">AC</button>
+      <button class="btn-del" onclick="deleteChar()">⌫</button>
+      <button class="btn-dollar" onclick="convertDollar()">$⇄₹</button>
+      <button class="btn-op" onclick="appendOp('÷')">÷</button>
+
+      <!-- Row 2 -->
+      <button class="btn-sci sci-key" onclick="appendFunc('ln')">ln</button>
+      <button class="btn-sci sci-key" onclick="appendFunc('log')">log</button>
+      <button class="btn-sci sci-key" onclick="appendFunc('√')">√</button>
+      <button class="btn-sci sci-key" onclick="appendOp('^')">xʸ</button>
+      <button class="btn-num" onclick="appendNum('7')">7</button>
+      <button class="btn-num" onclick="appendNum('8')">8</button>
+      <button class="btn-num" onclick="appendNum('9')">9</button>
+      <button class="btn-op" onclick="appendOp('×')">×</button>
+
+      <!-- Row 3 -->
+      <button class="btn-sci sci-key" onclick="appendConstant('π')">π</button>
+      <button class="btn-sci sci-key" onclick="appendConstant('e')">e</button>
+      <button class="btn-sci sci-key" onclick="appendFactorial()">x!</button>
+      <button class="btn-sci sci-key" onclick="squareNumber()">x²</button>
+      <button class="btn-num" onclick="appendNum('4')">4</button>
+      <button class="btn-num" onclick="appendNum('5')">5</button>
+      <button class="btn-num" onclick="appendNum('6')">6</button>
+      <button class="btn-op" onclick="appendOp('-')">−</button>
+
+      <!-- Row 4 -->
+      <button class="btn-sci sci-key" onclick="reciprocal()">1/x</button>
+      <button class="btn-sci sci-key" onclick="toggleSign()">±</button>
+      <button class="btn-sci sci-key" onclick="appendFunc('asin')">sin⁻¹</button>
+      <button class="btn-sci sci-key" onclick="appendFunc('acos')">cos⁻¹</button>
+      <button class="btn-num" onclick="appendNum('1')">1</button>
+      <button class="btn-num" onclick="appendNum('2')">2</button>
+      <button class="btn-num" onclick="appendNum('3')">3</button>
+      <button class="btn-op" onclick="appendOp('+')">+</button>
+
+      <!-- Row 5 (Landscape aligns neatly across bottom) -->
+      <button class="btn-sci sci-key" onclick="appendFunc('atan')">tan⁻¹</button>
+      <button class="btn-sci sci-key" onclick="appendNum('(')">(</button>
+      <button class="btn-sci sci-key" onclick="appendNum(')')">)</button>
+      <button class="btn-sci sci-key" onclick="appendNum('Math.E')">EXP</button>
+      <button class="btn-num" onclick="appendNum('0')" style="grid-column: span 1;">0</button>
+      <button class="btn-num" onclick="appendDot()">.</button>
+      <button class="btn-equal" onclick="calculate()" style="grid-column: span 2;">=</button>
+    </div>
+  </div>
+
+  <script>
+    const expDisplay = document.getElementById('expression');
+    const resDisplay = document.getElementById('result');
+    const angleModeBtn = document.getElementById('angleMode');
+
+    let expr = "0";
+    let isDeg = true;
+    let isDollar = false;
+    const USD_RATE = 84.00;
+
+    function updateView() {
+      expDisplay.innerText = expr;
+    }
+
+    // முழுத்திரை (Full Screen) ஆன் / ஆஃப் செய்யும் வசதி
+    function toggleFullScreen() {
+      if (!document.fullscreenElement && !document.webkitFullscreenElement) {
+        if (document.documentElement.requestFullscreen) {
+          document.documentElement.requestFullscreen();
+        } else if (document.documentElement.webkitRequestFullscreen) {
+          document.documentElement.webkitRequestFullscreen();
+        }
+      } else {
+        if (document.exitFullscreen) {
+          document.exitFullscreen();
+        } else if (document.webkitExitFullscreen) {
+          document.webkitExitFullscreen();
+        }
+      }
+    }
+
+    function toggleAngleMode() {
+      isDeg = !isDeg;
+      angleModeBtn.innerText = isDeg ? "DEG" : "RAD";
+    }
+
+    function appendNum(n) {
+      if (expr === "0" || expr === "Error") {
+        expr = n;
+      } else {
+        expr += n;
+      }
+      updateView();
+    }
+
+    function appendConstant(c) {
+      if (expr === "0" || expr === "Error") {
+        expr = c;
+      } else {
+        const last = expr.slice(-1);
+        if ("0123456789πe".includes(last)) {
+          expr += "×" + c;
+        } else {
+          expr += c;
+        }
+      }
+      updateView();
+    }
+
+    function appendFunc(f) {
+      if (expr === "0" || expr === "Error") {
+        expr = f;
+      } else {
+        const last = expr.slice(-1);
+        if ("0123456789πe".includes(last)) {
+          expr += "×" + f;
+        } else {
+          expr += f;
+        }
+      }
+      updateView();
+    }
+
+    function appendOp(op) {
+      if (expr === "Error") expr = "0";
+      const last = expr.slice(-1);
+      if (['+', '-', '×', '÷', '^', '%'].includes(last)) {
+        expr = expr.slice(0, -1) + op;
+      } else {
+        expr += op;
+      }
+      updateView();
+    }
+
+    function appendDot() {
+      const parts = expr.split(/[\+\-\×\÷\^%]/);
+      const current = parts[parts.length - 1];
+      if (!current.includes('.')) {
+        expr += '.';
+        updateView();
+      }
+    }
+
+    function appendFactorial() {
+      const last = expr.slice(-1);
+      if ("0123456789".includes(last)) {
+        expr += "!";
+        updateView();
+      }
+    }
+
+    function squareNumber() {
+      appendOp('^');
+      appendNum('2');
+    }
+
+    function reciprocal() {
+      try {
+        let val = parseFloat(resDisplay.innerText !== "0" && resDisplay.innerText !== "Error" ? resDisplay.innerText : expr);
+        if (!isNaN(val) && val !== 0) {
+          let ans = 1 / val;
+          resDisplay.innerText = formatNumber(ans);
+        }
+      } catch(e) {}
+    }
+
+    function toggleSign() {
+      try {
+        if (expr.startsWith('-')) {
+          expr = expr.substring(1);
+        } else if (expr !== "0") {
+          expr = '-' + expr;
+        }
+        updateView();
+      } catch(e) {}
+    }
+
+    function clearAll() {
+      expr = "0";
+      resDisplay.innerText = "0";
+      isDollar = false;
+      updateView();
+    }
+
+    function deleteChar() {
+      const funcs = ['asin', 'acos', 'atan', 'sin', 'cos', 'tan', 'log', 'ln'];
+      let found = false;
+      for (let f of funcs) {
+        if (expr.endsWith(f)) {
+          expr = expr.slice(0, -f.length);
+          found = true;
+          break;
+        }
+      }
+
+      if (!found) {
+        if (expr.length > 1) {
+          expr = expr.slice(0, -1);
+        } else {
+          expr = "0";
+        }
+      }
+      if (expr === "") expr = "0";
+      updateView();
+    }
+
+    function fact(n) {
+      if (n < 0) return NaN;
+      if (n === 0 || n === 1) return 1;
+      let res = 1;
+      for (let i = 2; i <= n; i++) res *= i;
+      return res;
+    }
+
+    function formatNumber(num) {
+      if (isNaN(num) || !isFinite(num)) return "Error";
+      return parseFloat(num.toFixed(8)).toString();
+    }
+
+    function calculate() {
+      try {
+        let parsed = expr;
+
+        parsed = parsed.replace(/×/g, '*').replace(/÷/g, '/');
+        parsed = parsed.replace(/π/g, `(${Math.PI})`).replace(/e/g, `(${Math.E})`);
+        parsed = parsed.replace(/(\d+(\.\d+)?)!/g, 'fact($1)');
+        parsed = parsed.replace(/\^/g, '**');
+        parsed = parsed.replace(/%/g, '*0.01');
+
+        // பிராக்கெட் இல்லாமலே வேலை செய்யும் மேஜிக்
+        parsed = parsed.replace(/√([0-9\.]+)/g, 'Math.sqrt($1)');
+
+        // Inverse Trigonometry
+        if (isDeg) {
+          parsed = parsed.replace(/asin([0-9\.]+)/g, '(Math.asin($1)*180/Math.PI)');
+          parsed = parsed.replace(/acos([0-9\.]+)/g, '(Math.acos($1)*180/Math.PI)');
+          parsed = parsed.replace(/atan([0-9\.]+)/g, '(Math.atan($1)*180/Math.PI)');
+
+          parsed = parsed.replace(/sin([0-9\.]+)/g, 'Math.sin(($1)*Math.PI/180)');
+          parsed = parsed.replace(/cos([0-9\.]+)/g, 'Math.cos(($1)*Math.PI/180)');
+          parsed = parsed.replace(/tan([0-9\.]+)/g, 'Math.tan(($1)*Math.PI/180)');
+        } else {
+          parsed = parsed.replace(/asin([0-9\.]+)/g, 'Math.asin($1)');
+          parsed = parsed.replace(/acos([0-9\.]+)/g, 'Math.acos($1)');
+          parsed = parsed.replace(/atan([0-9\.]+)/g, 'Math.atan($1)');
+
+          parsed = parsed.replace(/sin([0-9\.]+)/g, 'Math.sin($1)');
+          parsed = parsed.replace(/cos([0-9\.]+)/g, 'Math.cos($1)');
+          parsed = parsed.replace(/tan([0-9\.]+)/g, 'Math.tan($1)');
+        }
+
+        parsed = parsed.replace(/log([0-9\.]+)/g, 'Math.log10($1)');
+        parsed = parsed.replace(/ln([0-9\.]+)/g, 'Math.log($1)');
+
+        let finalAns = Function('fact', '"use strict"; return (' + parsed + ')')(fact);
+
+        if (finalAns !== undefined && !isNaN(finalAns) && isFinite(finalAns)) {
+          resDisplay.innerText = formatNumber(finalAns);
+          isDollar = false;
+        } else {
+          resDisplay.innerText = "Error";
+        }
+      } catch (err) {
+        resDisplay.innerText = "Error";
+      }
+    }
+
+    function convertDollar() {
+      try {
+        let val = parseFloat(resDisplay.innerText !== "0" && resDisplay.innerText !== "Error" ? resDisplay.innerText : expr);
+        if (isNaN(val)) return;
+
+        if (!isDollar) {
+          let usd = (val / USD_RATE).toFixed(2);
+          resDisplay.innerText = "$ " + usd;
+          isDollar = true;
+        } else {
+          let inr = (val * USD_RATE).toFixed(2);
+          resDisplay.innerText = "₹ " + inr;
+          isDollar = false;
+        }
+      } catch (e) {
+        resDisplay.innerText = "Error";
+      }
+    }
+  </script>
+</body>
+</html>
